@@ -1,0 +1,25 @@
+**/.gitattributes
+
+# Maven
+**/.mvn/
+**/mvnw
+**/mvnw.cmd
+
+**/target/
+**/.mvn/wrapper/maven-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Environment / secrets
+.env
+.env.*
