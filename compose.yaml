@@ -52,19 +52,3 @@ services:
       - "${SONG_DB_PORT}:5432"  # Maps container port 5432 to host port 5433 (to avoid conflict)
     volumes:
       - ./init-scripts/song-db:/docker-entrypoint-initdb.d
-  localstack:
-    container_name: '${LOCALSTACK_DOCKER_NAME:-localstack-aws}'
-    image: localstack/localstack
-    ports:
-      - '127.0.0.1:4566:4566' # LocalStack Gateway
-      - '127.0.0.1:4510-4559:4510-4559' # external services port range
-      - '127.0.0.1:443:443' # LocalStack HTTPS Gateway
-    environment:
-      # Activate LocalStack for AWS: https://docs.localstack.cloud/getting-started/auth-token/
-      - LOCALSTACK_AUTH_TOKEN=${LOCALSTACK_AUTH_TOKEN:?}
-      # LocalStack configuration: https://docs.localstack.cloud/references/configuration/
-      - DEBUG=${DEBUG:-0}
-      - PERSISTENCE=${PERSISTENCE:-0}
-    volumes:
-      - '${LOCALSTACK_VOLUME_DIR:-./volume}:/var/lib/localstack'
-      - '/var/run/docker.sock:/var/run/docker.sock'

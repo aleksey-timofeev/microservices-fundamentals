@@ -1,7 +1,8 @@
-package com.alextim.resourceprocessor.extractor;
+package com.alextim.resource.extractor;
 
 import org.apache.tika.Tika;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayInputStream;

@@ -2,10 +2,12 @@ package com.alextim.resource.service;
 
 import com.alextim.resource.client.SongClient;
 import com.alextim.resource.exception.NotFoundException;
+import com.alextim.resource.extractor.Mp3Extractor;
+import com.alextim.resource.extractor.SongMetadata;
 import com.alextim.resource.persistence.entity.Resource;
-import com.alextim.resource.persistence.s3.ResourceStorage;
 import com.alextim.resource.repository.ResourceRepository;
-import io.awspring.cloud.s3.S3Resource;
+import com.alextim.resource.request.SongRequest;
+import com.alextim.resource.service.mapper.SongMapper;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
@@ -30,9 +32,10 @@ public class ResourceService {
     private static final String INVALID_ID_MSG =
             "Invalid ID format: '%s'. Only positive integers are allowed";
 
-    private final SongClient songClient;
     private final ResourceRepository repository;
-    private final ResourceStorage storage;
+    private final Mp3Extractor mp3Extractor;
+    private final SongClient songClient;
+    private final SongMapper songMapper;
 
     @Transactional
     public Integer uploadResource(byte[] file, String contentType) {
@@ -40,11 +43,15 @@ public class ResourceService {
             throw new IllegalArgumentException(String.format(INVALID_MEDIA_TYPE_MSG, contentType));
         }
 
-        S3Resource s3Resource = storage.upload(file);
+        SongMetadata metadata = mp3Extractor.extract(file);
+
         Resource resource = Resource.builder()
-                .location(s3Resource.getLocation().getObject())
+                .data(file)
                 .build();
         Resource saved = repository.save(resource);
+
+        SongRequest request = songMapper.toRequest(saved.getId(), metadata);
+        songClient.saveSongMetadata(request);
 
         return saved.getId();
     }
@@ -52,7 +59,7 @@ public class ResourceService {
     public byte[] getResource(Integer id) {
         Resource resource = repository.findById(id).orElseThrow(() ->
                 new NotFoundException(String.format(CAN_NOT_FIND_RESOURCE_BY_ID_MSG, id)));
-        return storage.download(resource.getLocation());
+        return resource.getData();
     }
 
     @Transactional
@@ -73,8 +80,6 @@ public class ResourceService {
         }
         List<Integer> resourceIds = repository.findExistingIds(validIds);
         if (!resourceIds.isEmpty()) {
-            Iterable<Resource> resources = repository.findAllById(resourceIds);
-            resources.forEach(resource -> storage.delete(resource.getLocation()));
             songClient.deleteSongMetadata(resourceIds);
             repository.deleteAllById(resourceIds);
         }

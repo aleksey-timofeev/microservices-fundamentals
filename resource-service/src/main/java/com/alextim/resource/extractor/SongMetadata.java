@@ -1,4 +1,4 @@
-package com.alextim.resourceprocessor.extractor;
+package com.alextim.resource.extractor;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
