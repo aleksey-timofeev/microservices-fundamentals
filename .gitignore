@@ -22,3 +22,6 @@ Thumbs.db
 
 # Environment / secrets
 .env
+
+# Local Stack
+**/volume

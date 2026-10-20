@@ -1,7 +1,5 @@
 package com.alextim.resource.client;
 
-import com.alextim.resource.request.SongRequest;
-import com.alextim.resource.response.IdResponse;
 import com.alextim.resource.response.IdsResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -15,14 +13,6 @@ import java.util.stream.Collectors;
 public class SongClient {
 
     private final RestClient songRestClient;
-
-    public IdResponse saveSongMetadata(SongRequest request) {
-        return songRestClient.post()
-                .uri("/songs")
-                .body(request)
-                .retrieve()
-                .body(IdResponse.class);
-    }
 
     public IdsResponse deleteSongMetadata(List<Integer> resourceIds) {
         String ids = resourceIds.stream()
