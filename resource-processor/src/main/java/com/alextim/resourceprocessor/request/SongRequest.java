@@ -1,4 +1,4 @@
-package com.alextim.resource.request;
+package com.alextim.resourceprocessor.request;
 
 import lombok.Builder;
 import lombok.Data;

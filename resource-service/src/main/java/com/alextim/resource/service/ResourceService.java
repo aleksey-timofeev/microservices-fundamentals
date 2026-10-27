@@ -5,6 +5,7 @@ import com.alextim.resource.exception.NotFoundException;
 import com.alextim.resource.persistence.entity.Resource;
 import com.alextim.resource.persistence.s3.ResourceStorage;
 import com.alextim.resource.repository.ResourceRepository;
+import com.alextim.resource.service.messaging.ResourceEventPublisher;
 import io.awspring.cloud.s3.S3Resource;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
@@ -33,6 +34,7 @@ public class ResourceService {
     private final SongClient songClient;
     private final ResourceRepository repository;
     private final ResourceStorage storage;
+    private final ResourceEventPublisher resourceEventPublisher;
 
     @Transactional
     public Integer uploadResource(byte[] file, String contentType) {
@@ -45,6 +47,9 @@ public class ResourceService {
                 .location(s3Resource.getLocation().getObject())
                 .build();
         Resource saved = repository.save(resource);
+        Integer resourceId = saved.getId();
+
+        resourceEventPublisher.publish(resourceId);
 
         return saved.getId();
     }
