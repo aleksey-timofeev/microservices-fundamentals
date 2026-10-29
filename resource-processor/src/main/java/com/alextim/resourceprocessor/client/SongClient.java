@@ -6,6 +6,7 @@ import com.alextim.resourceprocessor.service.mapper.SongMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 
 @Component
@@ -13,15 +14,21 @@ import org.springframework.web.client.RestClient;
 public class SongClient {
     private final RestClient songRestClient;
     private final SongMapper songMapper;
-    private final RetryTemplate httpRetryTemplate;
+    private final RetryTemplate songRetryTemplate;
 
     public IdResponse createSongMetadata(Integer resourceId, SongMetadata metadata) {
         var songRequest = songMapper.toRequest(resourceId, metadata);
 
-        return httpRetryTemplate.execute(context -> songRestClient.post()
+        try {
+            return songRetryTemplate.execute(context -> songRestClient.post()
                     .uri("/songs")
                     .body(songRequest)
                     .retrieve()
                     .body(IdResponse.class));
+        } catch (HttpClientErrorException.Conflict conflict) {
+            return IdResponse.builder()
+                    .id(resourceId)
+                    .build();
+        }
     }
 }

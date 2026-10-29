@@ -8,8 +8,8 @@ import java.time.Duration;
 
 @Getter
 @Setter
-@ConfigurationProperties(prefix = "resource-processor.http-retry")
-public class HttpRetryProperties {
+@ConfigurationProperties(prefix = "resource-service.http-retry")
+public class RetryProperties {
     private int maxAttempts = 3;
     private Duration initialInterval = Duration.ofMillis(200);
     private Duration maxInterval = Duration.ofSeconds(1);

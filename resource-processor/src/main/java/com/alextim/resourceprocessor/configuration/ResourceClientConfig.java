@@ -1,6 +1,6 @@
 package com.alextim.resourceprocessor.configuration;
 
-import com.alextim.resourceprocessor.client.factory.RestClientFactory;
+import com.alextim.resourceprocessor.factory.RestClientFactory;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

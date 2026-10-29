@@ -9,10 +9,10 @@ import org.springframework.web.client.RestClient;
 @RequiredArgsConstructor
 public class ResourceClient {
     private final RestClient resourceRestClient;
-    private final RetryTemplate httpRetryTemplate;
+    private final RetryTemplate resourceRetryTemplate;
 
     public byte[] getResource(Integer id) {
-        return httpRetryTemplate.execute(context -> resourceRestClient.get()
+        return resourceRetryTemplate.execute(context -> resourceRestClient.get()
                     .uri("/resources/{id}", id)
                     .retrieve()
                     .body(byte[].class));

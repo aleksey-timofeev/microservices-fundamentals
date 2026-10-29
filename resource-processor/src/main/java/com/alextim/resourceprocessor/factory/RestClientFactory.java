@@ -1,12 +1,14 @@
-package com.alextim.resource.client.factory;
+package com.alextim.resourceprocessor.factory;
 
-import com.alextim.resource.configuration.TimeoutProperties;
+import com.alextim.resourceprocessor.configuration.TimeoutProperties;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
+@Component
 public class RestClientFactory {
     public RestClient create(String baseUrl, TimeoutProperties timeouts) {
         var factory = new SimpleClientHttpRequestFactory();
