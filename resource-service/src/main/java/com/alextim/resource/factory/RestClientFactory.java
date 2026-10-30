@@ -1,4 +1,4 @@
-package com.alextim.resource.client.factory;
+package com.alextim.resource.factory;
 
 import com.alextim.resource.configuration.TimeoutProperties;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
