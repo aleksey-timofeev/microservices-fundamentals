@@ -31,6 +31,7 @@ public class ResourceService {
 
     private static final String INVALID_ID_MSG =
             "Invalid ID format: '%s'. Only positive integers are allowed";
+    private static final String MP3_CONTENT_TYPE = "audio/mpeg";
 
     private final SongClient songClient;
     private final ResourceRepository repository;
@@ -39,7 +40,7 @@ public class ResourceService {
 
     @Transactional
     public Integer uploadResource(byte[] file, String contentType) {
-        if (!"audio/mpeg".equals(contentType)) {
+        if (!MP3_CONTENT_TYPE.equals(contentType)) {
             throw new IllegalArgumentException(String.format(INVALID_MEDIA_TYPE_MSG, contentType));
         }
 

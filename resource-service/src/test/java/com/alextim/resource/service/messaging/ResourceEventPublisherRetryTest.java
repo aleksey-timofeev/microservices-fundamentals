@@ -37,7 +37,7 @@ class ResourceEventPublisherRetryTest {
                         new AmqpConnectException("RabbitMQ unavailable", new IOException("connection refused"))
                 ))
                 .thenAnswer(invocation -> acknowledge(invocation.getArgument(1)));
-        var publisher = new ResourceEventPublisher(streamBridge, Duration.ofSeconds(1), retryTemplate());
+        var publisher = new RabbitResourceEventPublisher(streamBridge, Duration.ofSeconds(1), retryTemplate());
 
         publisher.publish(17);
 
@@ -52,7 +52,7 @@ class ResourceEventPublisherRetryTest {
                         MessageBuilder.withPayload(17).build(),
                         new IllegalArgumentException()
                 ));
-        var publisher = new ResourceEventPublisher(streamBridge, Duration.ofSeconds(1), retryTemplate());
+        var publisher = new RabbitResourceEventPublisher(streamBridge, Duration.ofSeconds(1), retryTemplate());
 
         assertThatThrownBy(() -> publisher.publish(17))
                 .isInstanceOf(MessageHandlingException.class);
@@ -64,7 +64,7 @@ class ResourceEventPublisherRetryTest {
     void publish_retriesTransientPublishExceptionAndStopsAtMaximumAttempts() {
         StreamBridge streamBridge = mock(StreamBridge.class);
         when(streamBridge.send(eq(BINDING_NAME), any(Message.class))).thenReturn(false);
-        var publisher = new ResourceEventPublisher(streamBridge, Duration.ofSeconds(1), retryTemplate());
+        var publisher = new RabbitResourceEventPublisher(streamBridge, Duration.ofSeconds(1), retryTemplate());
 
         assertThatThrownBy(() -> publisher.publish(17))
                 .isInstanceOf(TransientPublishException.class);
