@@ -51,7 +51,11 @@ services:
       SONG_SERVICE_URL: ${SONG_SERVICE_URL}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_URL}
       #Local Stack
-      AWS_ENDPOINT_URL: ${AWS_ENDPOINT_URL}
+      SPRING_CLOUD_AWS_ENDPOINT: ${AWS_ENDPOINT_URL}
+      SPRING_CLOUD_AWS_REGION_STATIC: ${AWS_REGION}
+      SPRING_CLOUD_AWS_CREDENTIALS_ACCESS_KEY: ${AWS_ACCESS_KEY_ID}
+      SPRING_CLOUD_AWS_CREDENTIALS_SECRET_KEY: ${AWS_SECRET_ACCESS_KEY}
+      RESOURCE_SERVICE_STORAGE_BUCKET: ${AWS_S3_BUCKET}
       # Rabbit MQ
       SPRING_RABBITMQ_HOST: ${RABBITMQ_HOST}
       SPRING_RABBITMQ_PORT: ${RABBITMQ_PORT}
@@ -68,7 +72,7 @@ services:
       eureka-server:
         condition: service_started
   resource-db:
-    image: postgres:17-alpine3.24
+    image: ${POSTGRES_IMAGE}
     environment:
       POSTGRES_DB: ${RESOURCE_DB_NAME}
       POSTGRES_USER: ${RESOURCE_DB_USER}
@@ -107,7 +111,7 @@ services:
       eureka-server:
         condition: service_started
   song-db:
-    image: postgres:17-alpine3.24
+    image: ${POSTGRES_IMAGE}
     environment:
       POSTGRES_DB: ${SONG_DB_NAME}
       POSTGRES_USER: ${SONG_DB_USER}
@@ -142,7 +146,7 @@ services:
     volumes:
       - '${LOCALSTACK_VOLUME_DIR:-./volume}:/var/lib/localstack'
       - '/var/run/docker.sock:/var/run/docker.sock'
-      - './init-scripts/localstack:/etc/localstack/init/ready.d'
+      - './init-scripts/localstack/init-s3.sh:/etc/localstack/init/ready.d/init-s3.sh'
   rabbitmq:
     image: rabbitmq:4-management
     container_name: rabbitmq
