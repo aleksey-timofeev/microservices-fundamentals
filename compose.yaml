@@ -4,43 +4,63 @@ services:
       context: ./eureka-server
       dockerfile: Dockerfile
     ports:
-      - "8761:8761"
+      - "${EUREKA_SERVER_PORT}:${EUREKA_SERVER_PORT}"
+    environment:
+      SERVER_PORT: ${EUREKA_SERVER_PORT}
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:$${SERVER_PORT}/eureka/apps" ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
   api-gateway:
     build:
       context: ./api-gateway
       dockerfile: Dockerfile
-    container_name: api-gateway
     ports:
-      - "8080:8080"
+      - "${API_GATEWAY_PORT}:${API_GATEWAY_PORT}"
     environment:
-      SERVER_PORT: 8080
+      SERVER_PORT: ${API_GATEWAY_PORT}
       EUREKA_URL: ${EUREKA_URL}
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:$${SERVER_PORT}/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
     depends_on:
       eureka-server:
-        condition: service_started
+        condition: service_healthy
   resource-processor:
-    container_name: resource-processor
     build:
       context: ./resource-processor
       dockerfile: Dockerfile
     environment:
       SPRING_RABBITMQ_HOST: ${RABBITMQ_HOST}
-      SPRING_RABBITMQ_PORT: ${RABBITMQ_PORT}
+      SPRING_RABBITMQ_PORT: ${RABBITMQ_HOST_PORT}
       SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USERNAME}
       SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      RESOURCE_PROCESSOR_SERVER_PORT: ${RESOURCE_PROCESSOR_SERVER_PORT:-8085}
       RESOURCE_UPLOADED_DESTINATION: ${RESOURCE_UPLOADED_DESTINATION}
       RESOURCE_PROCESSOR_GROUP: ${RESOURCE_PROCESSOR_GROUP}
       SONG_SERVICE_URL: ${SONG_SERVICE_URL}
       RESOURCE_SERVICE_URL: ${RESOURCE_SERVICE_URL}
     depends_on:
-      resource-service:
-        condition: service_started
-      song-service:
-        condition: service_started
       rabbitmq:
         condition: service_healthy
+      api-gateway:
+        condition: service_healthy
+      resource-service:
+        condition: service_healthy
+      song-service:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:$${RESOURCE_PROCESSOR_SERVER_PORT}/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
   resource-service:
-    container_name: resource-service
     build:
       context: ./resource-service
       dockerfile: Dockerfile
@@ -58,26 +78,38 @@ services:
       RESOURCE_SERVICE_STORAGE_BUCKET: ${AWS_S3_BUCKET}
       # Rabbit MQ
       SPRING_RABBITMQ_HOST: ${RABBITMQ_HOST}
-      SPRING_RABBITMQ_PORT: ${RABBITMQ_PORT}
+      SPRING_RABBITMQ_PORT: ${RABBITMQ_HOST_PORT}
       SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USERNAME}
       SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
       RESOURCE_UPLOADED_DESTINATION: ${RESOURCE_UPLOADED_DESTINATION}
+      RESOURCE_SERVICE_PORT: ${RESOURCE_SERVICE_PORT}
     ports:
-      - "8081:8081"
+      - "${RESOURCE_SERVICE_PORT}:${RESOURCE_SERVICE_PORT}"
     depends_on:
       resource-db:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
       eureka-server:
-        condition: service_started
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+      api-gateway:
+        condition: service_healthy
+      song-service:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:$${RESOURCE_SERVICE_PORT}/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
   resource-db:
     image: ${POSTGRES_IMAGE}
     environment:
       POSTGRES_DB: ${RESOURCE_DB_NAME}
       POSTGRES_USER: ${RESOURCE_DB_USER}
       POSTGRES_PASSWORD: ${RESOURCE_DB_PASSWORD}
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_URL}
     ports:
       - "${RESOURCE_DB_PORT}:5432"  # Maps container port 5432 to host port 5432
     volumes:
@@ -97,19 +129,26 @@ services:
       context: ./song-service
       dockerfile: Dockerfile
     deploy:
-      replicas: 2
+      replicas: ${SONG_SERVICE_REPLICAS:-1}
     ports:
-      - 8082-8083:8082
+      - ${SONG_SERVICE_HOST_PORT_RANGE}:${SONG_SERVICE_PORT}
     environment:
       SPRING_DATASOURCE_URL: ${SONG_DB_URL}
       SPRING_DATASOURCE_USERNAME: ${SONG_DB_USER}
       SPRING_DATASOURCE_PASSWORD: ${SONG_DB_PASSWORD}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_URL}
+      SONG_SERVICE_PORT: ${SONG_SERVICE_PORT}
     depends_on:
       song-db:
         condition: service_healthy
       eureka-server:
-        condition: service_started
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:$${SONG_SERVICE_PORT}/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
   song-db:
     image: ${POSTGRES_IMAGE}
     environment:
@@ -131,28 +170,28 @@ services:
       retries: 5
       start_period: 10s
   localstack:
-    container_name: '${LOCALSTACK_DOCKER_NAME:-localstack-aws}'
-    image: localstack/localstack
+    image: localstack/localstack:latest
+    env_file:
+      - .localstack.env
     ports:
-      - '127.0.0.1:4566:4566' # LocalStack Gateway
-      - '127.0.0.1:4510-4559:4510-4559' # external services port range
-      - '127.0.0.1:443:443' # LocalStack HTTPS Gateway
-    environment:
-      # Activate LocalStack for AWS: https://docs.localstack.cloud/getting-started/auth-token/
-      - LOCALSTACK_AUTH_TOKEN=${LOCALSTACK_AUTH_TOKEN:?}
-      # LocalStack configuration: https://docs.localstack.cloud/references/configuration/
-      - DEBUG=${DEBUG:-0}
-      - PERSISTENCE=${PERSISTENCE:-0}
+      - "127.0.0.1:${LOCALSTACK_GATEWAY_HOST_PORT}:4566" # LocalStack Gateway
+      - "127.0.0.1:${LOCALSTACK_SERVICES_HOST_PORT_RANGE}:4510-4559" # external services port range
+      - "127.0.0.1:${LOCALSTACK_HTTPS_HOST_PORT}:443" # LocalStack HTTPS Gateway
     volumes:
       - '${LOCALSTACK_VOLUME_DIR:-./volume}:/var/lib/localstack'
       - '/var/run/docker.sock:/var/run/docker.sock'
       - './init-scripts/localstack/init-s3.sh:/etc/localstack/init/ready.d/init-s3.sh'
+    healthcheck:
+      test: [ "CMD", "awslocal", "s3", "ls" ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
   rabbitmq:
     image: rabbitmq:4-management
-    container_name: rabbitmq
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "${RABBITMQ_HOST_PORT}:5672"
+      - "${RABBITMQ_MANAGEMENT_HOST_PORT}:15672"
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
