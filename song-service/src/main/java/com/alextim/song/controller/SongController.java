@@ -8,6 +8,8 @@ import com.alextim.song.service.SongService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,8 +25,17 @@ import java.util.List;
 @RestController
 @RequestMapping("/songs")
 @RequiredArgsConstructor
+@RefreshScope
 public class SongController {
     private final SongService songService;
+
+    @Value("${config.song-service.welcome-message:Default Welcome Message}")
+    private String welcomeMessage;
+
+    @GetMapping("/config-test/welcome")
+    public ResponseEntity<String> getConfigMessage() {
+        return ResponseEntity.ok(welcomeMessage);
+    }
 
     @PostMapping
     public ResponseEntity<IdResponse> createSongMetadata(@Valid @RequestBody SongRequest request) {
