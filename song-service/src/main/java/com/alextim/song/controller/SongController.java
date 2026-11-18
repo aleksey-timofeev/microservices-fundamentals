@@ -32,9 +32,14 @@ public class SongController {
     @Value("${config.song-service.welcome-message:Default Welcome Message}")
     private String welcomeMessage;
 
+    @Value("${HOSTNAME:local}")
+    private String instanceId;
+
     @GetMapping("/config-test/welcome")
     public ResponseEntity<String> getConfigMessage() {
-        return ResponseEntity.ok(welcomeMessage);
+        return ResponseEntity.ok()
+                .header("X-Instance-Id", instanceId)
+                .body(welcomeMessage);
     }
 
     @PostMapping

@@ -3135,9 +3135,9 @@
         "method": "POST",
         "header": [],
         "url": {
-          "raw": "{{song_service_actuator_url}}/actuator/refresh",
+          "raw": "{{song_service_actuator_node1_url}}/actuator/refresh",
           "host": [
-            "{{song_service_actuator_url}}"
+            "{{song_service_actuator_node1_url}}"
           ],
           "path": [
             "actuator",
@@ -3186,7 +3186,11 @@
       "value": "http://localhost:8080"
     },
     {
-      "key": "song_service_actuator_url",
+      "key": "song_service_actuator_node1_url",
+      "value": ""
+    },
+    {
+      "key": "song_service_actuator_node2_url",
       "value": ""
     }
   ]
