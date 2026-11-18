@@ -44,6 +44,7 @@ Counts below are test invocations reported by Maven, including parameterized inv
 
 | Level | Module | Test class | Current coverage | Invocations |
 |---|---|---|---|---:|
+| Unit | `api-gateway` | `GlobalErrorWebExceptionHandlerTest` | Uses `WebTestClient` with mocked `ErrorAttributes` to verify status handling, connection failures mapped to 503, and fallback to 500 for an invalid status | 3 |
 | Unit | `resource-service` | `ResourceServiceTest` | Upload validation and persistence/event request behavior; resource retrieval; deletion CSV validation and deletion of existing IDs | 7 |
 | Unit | `resource-service` | `ResourceEventListenerTest` | Listener forwards the uploaded resource ID to the publisher | 1 |
 | Unit | `resource-service` | `ResourceEventPublisherRetryTest` | Retry on transient Rabbit failure, no retry on permanent failure, and retries exhausted when publication is rejected | 3 |
@@ -56,9 +57,9 @@ Counts below are test invocations reported by Maven, including parameterized inv
 | Contract | `resource-processor` | `SongClientContractIT` | Real `SongClient`/`RestClient` exchange with a local HTTP server; verifies POST path, content type, request fields, and response decoding | 1 |
 | E2E | `resource-processor` | `ResourceUploadE2EIT` | Upload fixture through Gateway; poll the song endpoint and verify extracted metadata through the complete running stack | 1 |
 
-**Totals:** 31 unit, 3 integration, 1 component, 1 contract, and 1 E2E invocation. The default `mvn clean verify` runs 36; `mvn -Pe2e clean verify` runs all 37.
+**Totals:** 34 unit, 3 integration, 1 component, 1 contract, and 1 E2E invocation. The default `mvn clean verify` runs 39; `mvn -Pe2e clean verify` runs all 40.
 
-There are no test classes currently in `api-gateway` or `eureka-server`. The planned E2E deletion journey is not yet implemented. There is also no current test that exercises the actual RabbitMQ publication-to-consumption path or verifies Resource Service S3 behavior as an isolated integration/component test. The publisher retry test mocks `StreamBridge`; it does not verify broker routing. The Song Client contract test uses a local HTTP stub, not a running Song Service or a provider-generated contract artifact.
+There are no test classes currently in `eureka-server`. The planned E2E deletion journey is not yet implemented. There is also no current test that exercises the actual RabbitMQ publication-to-consumption path or verifies Resource Service S3 behavior as an isolated integration/component test. The publisher retry test mocks `StreamBridge`; it does not verify broker routing. The Song Client contract test uses a local HTTP stub, not a running Song Service or a provider-generated contract artifact.
 
 ## Architecture and coverage intent
 

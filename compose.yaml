@@ -21,7 +21,26 @@ services:
       - "${API_GATEWAY_PORT}:${API_GATEWAY_PORT}"
     environment:
       SERVER_PORT: ${API_GATEWAY_PORT}
-      EUREKA_URL: ${EUREKA_URL}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_URL}
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:$${SERVER_PORT}/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+  config-server:
+    build:
+      context: ./config-server
+      dockerfile: Dockerfile
+    ports:
+      - "${CONFIG_SERVER_PORT}:${CONFIG_SERVER_PORT}"
+    environment:
+      SERVER_PORT: ${CONFIG_SERVER_PORT}
+      CONFIG_GIT_URI: ${CONFIG_GIT_URI}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_URL}
     healthcheck:
       test: [ "CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:$${SERVER_PORT}/actuator/health" ]
       interval: 10s
@@ -40,22 +59,20 @@ services:
       SPRING_RABBITMQ_PORT: ${RABBITMQ_HOST_PORT}
       SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USERNAME}
       SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
-      RESOURCE_PROCESSOR_SERVER_PORT: ${RESOURCE_PROCESSOR_SERVER_PORT:-8085}
       RESOURCE_UPLOADED_DESTINATION: ${RESOURCE_UPLOADED_DESTINATION}
       RESOURCE_PROCESSOR_GROUP: ${RESOURCE_PROCESSOR_GROUP}
       SONG_SERVICE_URL: ${SONG_SERVICE_URL}
       RESOURCE_SERVICE_URL: ${RESOURCE_SERVICE_URL}
+
+      SERVER_PORT: ${RESOURCE_PROCESSOR_SERVER_PORT}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_URL}
     depends_on:
+      eureka-server:
+        condition: service_healthy
       rabbitmq:
         condition: service_healthy
-      api-gateway:
-        condition: service_healthy
-      resource-service:
-        condition: service_healthy
-      song-service:
-        condition: service_healthy
     healthcheck:
-      test: [ "CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:$${RESOURCE_PROCESSOR_SERVER_PORT}/actuator/health" ]
+      test: [ "CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:$${SERVER_PORT}/actuator/health" ]
       interval: 10s
       timeout: 5s
       retries: 12
@@ -68,6 +85,7 @@ services:
       SPRING_DATASOURCE_URL: ${RESOURCE_DB_URL}
       SPRING_DATASOURCE_USERNAME: ${RESOURCE_DB_USER}
       SPRING_DATASOURCE_PASSWORD: ${RESOURCE_DB_PASSWORD}
+      CONFIG_SERVER_URL: ${CONFIG_SERVER_URL}
       SONG_SERVICE_URL: ${SONG_SERVICE_URL}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_URL}
       #Local Stack
@@ -82,7 +100,7 @@ services:
       SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USERNAME}
       SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
       RESOURCE_UPLOADED_DESTINATION: ${RESOURCE_UPLOADED_DESTINATION}
-      RESOURCE_SERVICE_PORT: ${RESOURCE_SERVICE_PORT}
+      SERVER_PORT: ${RESOURCE_SERVICE_PORT}
     ports:
       - "${RESOURCE_SERVICE_PORT}:${RESOURCE_SERVICE_PORT}"
     depends_on:
@@ -96,10 +114,12 @@ services:
         condition: service_healthy
       api-gateway:
         condition: service_healthy
+      config-server:
+        condition: service_healthy
       song-service:
         condition: service_healthy
     healthcheck:
-      test: [ "CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:$${RESOURCE_SERVICE_PORT}/actuator/health" ]
+      test: [ "CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:$${SERVER_PORT}/actuator/health" ]
       interval: 10s
       timeout: 5s
       retries: 12
@@ -136,15 +156,19 @@ services:
       SPRING_DATASOURCE_URL: ${SONG_DB_URL}
       SPRING_DATASOURCE_USERNAME: ${SONG_DB_USER}
       SPRING_DATASOURCE_PASSWORD: ${SONG_DB_PASSWORD}
+      CONFIG_SERVER_URL: ${CONFIG_SERVER_URL}
+
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_URL}
-      SONG_SERVICE_PORT: ${SONG_SERVICE_PORT}
+      SERVER_PORT: ${SONG_SERVICE_PORT}
     depends_on:
       song-db:
         condition: service_healthy
       eureka-server:
         condition: service_healthy
+      config-server:
+        condition: service_healthy
     healthcheck:
-      test: [ "CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:$${SONG_SERVICE_PORT}/actuator/health" ]
+      test: [ "CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:$${SERVER_PORT}/actuator/health" ]
       interval: 10s
       timeout: 5s
       retries: 12
